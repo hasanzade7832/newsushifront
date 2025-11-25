@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/src/libs/api";
 
@@ -8,124 +9,139 @@ export default function NewProductPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(formData: FormData) {
+  const [price, setPrice] = useState<string>("");
+  const [discountPrice, setDiscountPrice] = useState<string>("");
+
+  function formatPreview(value: string) {
+    const num = Number(value || 0);
+    if (!num) return "۰ تومان";
+    const formatted = num.toLocaleString("fa-IR");
+    const thousands = (num / 1000).toLocaleString("fa-IR");
+    return `${formatted} تومان (${thousands} هزار تومان)`;
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setBusy(true);
     setError(null);
-    const payload = {
-      name: String(formData.get("name") || "").trim(),
-      description: String(formData.get("description") || "") || null,
-      price: Number(formData.get("price") || 0),
-      discountPrice: formData.get("discountPrice")
-        ? Number(formData.get("discountPrice"))
-        : null,
-      sku: String(formData.get("sku") || "").trim(),
-      stock: Number(formData.get("stock") || 0),
-      isActive: formData.get("isActive") === "on",
-      slug: String(formData.get("slug") || "") || null, // اختیاری
-    };
+
+    const formEl = e.currentTarget;
+    const formData = new FormData(formEl);
+
+    // یک SKU مخفی برای این‌که بک‌اند راضی باشد
+    if (!formData.get("sku")) {
+      formData.set("sku", `AUTO-${Date.now()}`);
+    }
 
     try {
-      await api.post("/products", payload);
+      await api.post("/products", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       router.push("/products");
-    } catch (e: any) {
-      setError(e?.response?.data?.title || "Failed to create product");
+    } catch (err: any) {
+      setError(err?.response?.data?.title || "خطا در ایجاد محصول");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">➕ New Product</h1>
+    <main className="p-8 max-w-2xl mx-auto" dir="rtl">
+      <h1 className="text-3xl font-bold mb-6">➕ محصول جدید</h1>
 
       {error && (
         <div className="mb-4 p-3 rounded bg-red-50 text-red-700">{error}</div>
       )}
 
-      <form action={onSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
+        {/* نام محصول */}
         <div>
-          <label className="block text-sm mb-1">Name *</label>
-          <input name="name" required className="w-full border rounded p-2" />
-        </div>
-
-        <div>
-          <label className="block text-sm mb-1">Description</label>
-          <textarea
-            name="description"
-            rows={3}
-            className="w-full border rounded p-2"
+          <label className="block text-sm mb-1">نام محصول *</label>
+          <input
+            name="name"
+            required
+            className="w-full border rounded p-2 text-right"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm mb-1">Price *</label>
-            <input
-              name="price"
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              className="w-full border rounded p-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Discount Price</label>
-            <input
-              name="discountPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              className="w-full border rounded p-2"
-            />
-          </div>
+        {/* قیمت */}
+        <div>
+          <label className="block text-sm mb-1">قیمت (تومان) *</label>
+          <input
+            name="price"
+            type="number"
+            min="0"
+            required
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full border rounded p-2 text-left"
+          />
+          <p className="mt-1 text-xs text-gray-600">
+            {formatPreview(price)}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm mb-1">SKU *</label>
-            <input name="sku" required className="w-full border rounded p-2" />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Stock *</label>
-            <input
-              name="stock"
-              type="number"
-              min="0"
-              required
-              className="w-full border rounded p-2"
-            />
-          </div>
+        {/* تخفیف */}
+        <div>
+          <label className="block text-sm mb-1">قیمت با تخفیف (تومان)</label>
+          <input
+            name="discountPrice"
+            type="number"
+            min="0"
+            value={discountPrice}
+            onChange={(e) => setDiscountPrice(e.target.value)}
+            className="w-full border rounded p-2 text-left"
+          />
+          {discountPrice && (
+            <p className="mt-1 text-xs text-gray-600">
+              {formatPreview(discountPrice)}
+            </p>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm mb-1">Slug (optional)</label>
-            <input
-              name="slug"
-              className="w-full border rounded p-2"
-              placeholder="e.g. salmon-nigiri"
-            />
-          </div>
-          <label className="flex items-end gap-2">
-            <input name="isActive" type="checkbox" defaultChecked />
-            <span>Active</span>
-          </label>
+        {/* موجودی */}
+        <div>
+          <label className="block text-sm mb-1">موجودی *</label>
+          <input
+            name="stock"
+            type="number"
+            min="0"
+            required
+            className="w-full border rounded p-2 text-left"
+          />
         </div>
+
+        {/* آپلود عکس */}
+        <div>
+          <label className="block text-sm mb-1">عکس محصول</label>
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            className="w-full border rounded p-2 bg-white"
+          />
+        </div>
+
+        {/* فیلدهای مخفی برای راضی‌کردن بک‌اند */}
+        <input type="hidden" name="sku" value="" />
+        <input type="hidden" name="description" value="" />
+        <input type="hidden" name="slug" value="" />
+        <input type="hidden" name="isActive" value="true" />
 
         <div className="flex gap-3 pt-2">
           <button
+            type="submit"
             disabled={busy}
             className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
           >
-            {busy ? "Saving..." : "Save"}
+            {busy ? "در حال ذخیره..." : "ذخیره"}
           </button>
           <button
             type="button"
             onClick={() => router.push("/products")}
             className="px-4 py-2 rounded border"
           >
-            Cancel
+            انصراف
           </button>
         </div>
       </form>
