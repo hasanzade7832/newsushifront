@@ -36,7 +36,7 @@ export default function MenuHeader() {
 
       const width = window.innerWidth;
 
-      // موبایل: منوی همبرگری، نوار افقی نداریم
+      // موبایل: فقط منوی همبرگری
       if (width < 768) {
         setIsDesktop(false);
         setVisibleCats([]);
@@ -46,12 +46,17 @@ export default function MenuHeader() {
 
       setIsDesktop(true);
 
-      // تعداد آیتم‌های قابل نمایش تقریبی بر اساس عرض صفحه
-      let maxVisible = 6;
-      if (width >= 1536) maxVisible = 9;
-      else if (width >= 1280) maxVisible = 8;
-      else if (width >= 1024) maxVisible = 7;
-      else maxVisible = 5;
+      // ریسپانسیو دقیق برای تعداد آیتم‌ها
+      let maxVisible: number;
+
+      if (width >= 1800) maxVisible = 13;
+      else if (width >= 1600) maxVisible = 12;
+      else if (width >= 1440) maxVisible = 11;
+      else if (width >= 1280) maxVisible = 10;
+      else if (width >= 1150) maxVisible = 9;
+      else if (width >= 1024) maxVisible = 8;
+      else if (width >= 900) maxVisible = 7;
+      else maxVisible = 6; // کمترین مقدار روی دسکتاپ کوچک
 
       if (CATEGORIES.length <= maxVisible) {
         setVisibleCats(CATEGORIES);
@@ -82,9 +87,11 @@ export default function MenuHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6"
-             dir="rtl">
-          {/* لوگو سمت راست */}
+        <div
+          className="flex w-full items-center justify-between px-4 py-3 sm:px-6"
+          dir="rtl"
+        >
+          {/* لوگو چسبیده به سمت راست */}
           <div className="flex items-center gap-2 text-emerald-900">
             <span className="text-xl font-extrabold sm:text-2xl">LoGo</span>
           </div>
@@ -120,11 +127,13 @@ export default function MenuHeader() {
                     <button
                       type="button"
                       onClick={() => openModal(overflowCats, "سایر دسته‌ها")}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-sm text-emerald-700 shadow-sm transition-all hover:bg-emerald-100 hover:text-emerald-900"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200/80 bg-emerald-50 text-xl sm:text-2xl text-emerald-600 shadow-sm transition-all hover:bg-emerald-100 hover:text-emerald-900 hover:border-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
                       aria-label="سایر دسته‌ها"
                     >
-                      {/* فلش به سمت راست (با جهت RTL هماهنگ) */}
-                      ◀
+                      {/* فلش: از '>' استفاده شده، با CSS برعکس و بزرگ می‌شود */}
+                      <span className="menu-more-icon" aria-hidden="true">
+                        &gt;
+                      </span>
                     </button>
                   </li>
                 )}

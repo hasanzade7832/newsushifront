@@ -50,7 +50,10 @@ export default function ProductsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white px-4 py-10 sm:px-8" dir="rtl">
+    <main
+      className="min-h-screen bg-gradient-to-b from-emerald-50 to-emerald-100 px-4 py-10 sm:px-8"
+      dir="rtl"
+    >
       {/* هدر منو */}
       <MenuHeader />
 
@@ -92,7 +95,7 @@ export default function ProductsPage() {
                   }}
                   className="group flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 rounded-[32px] bg-transparent"
                 >
-                  {/* تصویر بزرگ – انیمیشن فقط روی خود تصویر */}
+                  {/* تصویر بزرگ */}
                   <div className="relative mt-4 flex items-center justify-center">
                     {imgSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
