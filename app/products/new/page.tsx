@@ -46,14 +46,18 @@ export default function NewProductPage() {
   }
 
   return (
-    <main className="p-8 max-w-2xl mx-auto" dir="rtl">
+    <main className="p-8 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">➕ محصول جدید</h1>
 
       {error && (
         <div className="mb-4 p-3 rounded bg-red-50 text-red-700">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4" encType="multipart/form-data">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+        encType="multipart/form-data"
+      >
         {/* نام محصول */}
         <div>
           <label className="block text-sm mb-1">نام محصول *</label>
@@ -76,9 +80,7 @@ export default function NewProductPage() {
             onChange={(e) => setPrice(e.target.value)}
             className="w-full border rounded p-2 text-left"
           />
-          <p className="mt-1 text-xs text-gray-600">
-            {formatPreview(price)}
-          </p>
+          <p className="mt-1 text-xs text-gray-600">{formatPreview(price)}</p>
         </div>
 
         {/* تخفیف */}

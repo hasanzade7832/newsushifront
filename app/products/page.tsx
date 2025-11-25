@@ -1,3 +1,4 @@
+// app/products/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -50,15 +51,12 @@ export default function ProductsPage() {
   }, []);
 
   return (
-    <main
-      className="min-h-screen bg-gradient-to-b from-emerald-50 to-emerald-100 px-4 py-10 sm:px-8"
-      dir="rtl"
-    >
+    <main className="min-h-screen bg-gradient-to-b from-emerald-50 to-emerald-100 px-4 py-10 sm:px-8">
       {/* هدر منو */}
       <MenuHeader />
 
       {/* لیست محصولات */}
-      <section className="mx-auto mt-14 max-w-6xl">
+      <section className="mx-auto mt-14 max-w-6xl" dir="rtl">
         {loading ? (
           <p className="text-center text-2xl text-emerald-800">
             در حال بارگذاری…
@@ -93,7 +91,7 @@ export default function ProductsPage() {
                       router.push(`/products/${effectiveSlug}`);
                     }
                   }}
-                  className="group flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 rounded-[32px] bg-transparent"
+                  className="flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 bg-transparent"
                 >
                   {/* تصویر بزرگ */}
                   <div className="relative mt-4 flex items-center justify-center">
@@ -117,26 +115,26 @@ export default function ProductsPage() {
                         "
                       />
                     ) : (
-                      <div className="w-[320px] h-[260px] sm:w-[360px] sm:h-[290px] lg:w-[400px] lg:h-[320px] xl:w-[420px] xl:h-[340px] flex items-center justify-center rounded-[40px] bg-emerald-100/80 text-emerald-500 text-2xl">
+                      <div className="w-[320px] h-[260px] sm:w-[360px] sm:h-[290px] lg:w-[400px] lg:h-[320px] xl:w-[420px] xl:h-[340px] flex items-center justify-center rounded-[40px] bg-emerald-100/80 text-emerald-500 text-xl sm:text-2xl">
                         بدون تصویر
                       </div>
                     )}
                   </div>
 
-                  {/* متن زیر تصویر */}
-                  <div className="mt-3 space-y-4 px-2">
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-900">
+                  {/* باکس متن زیر تصویر با بردر و سایه لطیف */}
+                  <div className="mt-5 w-full max-w-md rounded-3xl border border-emerald-100/80 bg-white/80 px-6 py-5 text-center shadow-[0_20px_45px_rgba(16,185,129,0.12)]">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-900">
                       {p.name}
                     </h2>
 
-                    <div className="flex flex-col items-center gap-1 text-2xl sm:text-3xl">
+                    <div className="mt-2 flex flex-col items-center gap-1 text-lg sm:text-xl">
                       <div className="flex items-baseline gap-3">
                         {p.discountPrice ? (
                           <>
                             <span className="text-emerald-700 font-bold">
                               {formatToman(p.discountPrice)}
                             </span>
-                            <span className="text-gray-400 line-through">
+                            <span className="text-gray-400 line-through text-sm sm:text-base">
                               {formatToman(p.price)}
                             </span>
                           </>
@@ -146,12 +144,12 @@ export default function ProductsPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-lg text-emerald-700">
+                      <span className="text-xs sm:text-sm text-emerald-700">
                         موجودی: {p.stock.toLocaleString("fa-IR")}
                       </span>
                     </div>
 
-                    <p className="text-xl leading-relaxed text-emerald-900/90">
+                    <p className="mt-3 text-xs sm:text-sm leading-relaxed text-emerald-900/90">
                       {p.description
                         ? p.description
                         : "توضیحات این محصول هنوز ثبت نشده است، اما می‌توانید روی جزئیات محصول کلیک کنید تا اطلاعات بیشتری ببینید."}
@@ -164,7 +162,7 @@ export default function ProductsPage() {
                           e.stopPropagation();
                           router.push(`/products/${effectiveSlug}`);
                         }}
-                        className="rounded-full bg-emerald-600 px-6 py-2 text-lg sm:text-xl font-semibold text-white shadow-md shadow-emerald-300/60 transition-all hover:bg-emerald-700 hover:shadow-lg"
+                        className="rounded-full bg-emerald-600 px-5 py-2 text-sm sm:text-base font-semibold text-white shadow-md shadow-emerald-300/60 transition-all hover:bg-emerald-700 hover:shadow-lg"
                       >
                         جزئیات محصول
                       </button>

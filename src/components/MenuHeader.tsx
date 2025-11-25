@@ -1,7 +1,21 @@
+// src/components/MenuHeader.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import "./MenuHeader.css";
+import { useRef, useState, useEffect, type SyntheticEvent } from "react";
+import Box from "@mui/material/Box";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 const CATEGORIES = [
   "همه",
@@ -19,199 +33,277 @@ const CATEGORIES = [
 ];
 
 export default function MenuHeader() {
-  const [active, setActive] = useState<string>("سوشی ویژه");
+  // تب پیش‌فرض: "همه"
+  const [value, setValue] = useState(0);
 
-  const [visibleCats, setVisibleCats] = useState<string[]>(CATEGORIES);
-  const [overflowCats, setOverflowCats] = useState<string[]>([]);
-  const [isDesktop, setIsDesktop] = useState(false);
+  // ref برای هر تب (برای scrollIntoView)
+  const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalCats, setModalCats] = useState<string[]>([]);
-  const [modalTitle, setModalTitle] = useState<string>("");
+  // ref ظرف اسکرول افقی
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // محاسبه‌ی تعداد آیتم‌های قابل نمایش روی نوار بالایی
+  // تشخیص موبایل
+  const isMobile = useMediaQuery("(max-width:768px)");
+
+  // وضعیت مودال موبایل
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // جهت واقعی scrollLeft (برای سازگاری با RTL/LTR)
+  const [scrollSign, setScrollSign] = useState(1);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+
+  // تشخیص اینکه scrollLeft مثبت به کدام سمت می‌رود
   useEffect(() => {
-    const handleResize = () => {
-      if (typeof window === "undefined") return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
 
-      const width = window.innerWidth;
+    const start = el.scrollLeft;
+    el.scrollLeft += 1;
+    const end = el.scrollLeft;
+    const delta = end - start;
+    const sign = delta === 0 ? 1 : delta > 0 ? 1 : -1;
+    el.scrollLeft = start;
+    setScrollSign(sign);
+  }, []);
 
-      // موبایل: فقط منوی همبرگری
-      if (width < 768) {
-        setIsDesktop(false);
-        setVisibleCats([]);
-        setOverflowCats([]);
+  // به‌روزرسانی فعال بودن فلش‌ها
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const updateButtons = () => {
+      const node = scrollContainerRef.current;
+      if (!node) return;
+
+      const maxScroll = node.scrollWidth - node.clientWidth;
+      if (maxScroll <= 0) {
+        setCanScrollBack(false);
+        setCanScrollForward(false);
         return;
       }
 
-      setIsDesktop(true);
+      const raw = node.scrollLeft;
+      const pos = scrollSign >= 0 ? raw : -raw;
 
-      // ریسپانسیو دقیق برای تعداد آیتم‌ها
-      let maxVisible: number;
-
-      if (width >= 1800) maxVisible = 13;
-      else if (width >= 1600) maxVisible = 12;
-      else if (width >= 1440) maxVisible = 11;
-      else if (width >= 1280) maxVisible = 10;
-      else if (width >= 1150) maxVisible = 9;
-      else if (width >= 1024) maxVisible = 8;
-      else if (width >= 900) maxVisible = 7;
-      else maxVisible = 6; // کمترین مقدار روی دسکتاپ کوچک
-
-      if (CATEGORIES.length <= maxVisible) {
-        setVisibleCats(CATEGORIES);
-        setOverflowCats([]);
-      } else {
-        setVisibleCats(CATEGORIES.slice(0, maxVisible));
-        setOverflowCats(CATEGORIES.slice(maxVisible));
-      }
+      setCanScrollBack(pos > 1);
+      setCanScrollForward(pos < maxScroll - 1);
     };
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    updateButtons();
 
-  function openModal(categories: string[], title: string) {
-    setModalCats(categories);
-    setModalTitle(title);
-    setIsModalOpen(true);
-  }
+    el.addEventListener("scroll", updateButtons);
+    window.addEventListener("resize", updateButtons);
 
-  function closeModal() {
-    setIsModalOpen(false);
-  }
+    return () => {
+      el.removeEventListener("scroll", updateButtons);
+      window.removeEventListener("resize", updateButtons);
+    };
+  }, [scrollSign]);
 
-  const hasOverflow = overflowCats.length > 0;
+  // اسکرول با فلش‌ها
+  const scrollTabs = (direction: "back" | "forward") => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    // back = رفتن به سمت شروع لیست (سمت «همه» در RTL)
+    const amount = 150 * scrollSign * (direction === "forward" ? 1 : -1);
+    el.scrollBy({ left: amount, behavior: "smooth" });
+  };
+
+  // تغییر تب + اسکرول نرم روی تب انتخاب‌شده
+  const handleChange = (_: SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+
+    const el = tabRefs.current[newValue];
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  };
 
   return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur">
-        <div
-          className="flex w-full items-center justify-between px-4 py-3 sm:px-6"
-          dir="rtl"
-        >
-          {/* لوگو چسبیده به سمت راست */}
-          <div className="flex items-center gap-2 text-emerald-900">
-            <span className="text-xl font-extrabold sm:text-2xl">LoGo</span>
-          </div>
-
-          {/* نوار منو روی دسکتاپ */}
-          {isDesktop && (
-            <nav className="flex flex-1 items-center justify-center">
-              <ul className="flex items-center gap-4 sm:gap-6">
-                {visibleCats.map((cat) => {
-                  const isActive = active === cat;
-                  return (
-                    <li key={cat} className="whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => setActive(cat)}
-                        className={[
-                          "rounded-full px-5 py-2 text-sm sm:text-base font-semibold transition-all duration-200",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
-                          isActive
-                            ? "bg-emerald-100 text-emerald-900 shadow-sm"
-                            : "text-slate-900 hover:bg-emerald-50 hover:text-emerald-800",
-                        ].join(" ")}
-                      >
-                        {cat}
-                      </button>
-                    </li>
-                  );
-                })}
-
-                {/* دکمه‌ی «بیشتر» فقط اگر آیتم اضافه وجود دارد */}
-                {hasOverflow && (
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => openModal(overflowCats, "سایر دسته‌ها")}
-                      className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200/80 bg-emerald-50 text-xl sm:text-2xl text-emerald-600 shadow-sm transition-all hover:bg-emerald-100 hover:text-emerald-900 hover:border-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
-                      aria-label="سایر دسته‌ها"
-                    >
-                      {/* فلش: از '>' استفاده شده، با CSS برعکس و بزرگ می‌شود */}
-                      <span className="menu-more-icon" aria-hidden="true">
-                        &gt;
-                      </span>
-                    </button>
-                  </li>
-                )}
-              </ul>
-            </nav>
-          )}
-
-          {/* منوی همبرگری روی موبایل */}
-          {!isDesktop && (
-            <button
-              type="button"
-              onClick={() => openModal(CATEGORIES, "دسته‌بندی‌ها")}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-lg text-emerald-800 shadow-sm transition-all hover:bg-emerald-100"
-              aria-label="باز کردن منو"
-            >
-              ☰
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* مودال دسته‌ها */}
-      {isModalOpen && (
-        <div
-          className="menu-modal-backdrop fixed inset-0 z-50 flex items-start justify-center pt-20"
-          onClick={closeModal}
-        >
-          <div
-            className="menu-modal w-full max-w-md rounded-3xl bg-white py-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+    <Box
+      sx={{
+        bgcolor: "white",
+        borderBottom: 1,
+        borderColor: "divider",
+      }}
+    >
+      {/* نسخه موبایل: منوی همبرگری */}
+      {isMobile ? (
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              px: 2,
+              py: 1.5,
+            }}
           >
-            <div className="flex items-center justify-between px-5 pb-3">
-              <h2 className="text-base font-bold text-slate-900 sm:text-lg">
-                {modalTitle}
-              </h2>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="rounded-full px-3 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
-              >
-                بستن
-              </button>
-            </div>
+            {/* لوگو سمت راست */}
+            <Box
+              sx={{
+                fontWeight: 800,
+                fontSize: 20,
+                color: "#065f46",
+              }}
+            >
+              LoGo
+            </Box>
 
-            <div className="max-h-80 overflow-y-auto px-3 pb-3">
-              <ul className="space-y-2">
-                {modalCats.map((cat) => {
-                  const isActive = active === cat;
-                  return (
-                    <li key={cat}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActive(cat);
-                          closeModal();
-                        }}
-                        className={[
-                          "flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm sm:text-base transition-all",
-                          isActive
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "bg-slate-50 text-slate-800 hover:bg-emerald-50",
-                        ].join(" ")}
-                      >
-                        <span className="whitespace-nowrap">{cat}</span>
-                        {isActive && (
-                          <span className="text-xs text-emerald-700">
-                            انتخاب شده
-                          </span>
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        </div>
+            {/* دکمه همبرگری */}
+            <IconButton
+              onClick={() => setMenuOpen(true)}
+              aria-label="باز کردن منو"
+              sx={{
+                borderRadius: "999px",
+                border: "1px solid rgba(16,185,129,0.3)",
+                bgcolor: "rgba(16,185,129,0.05)",
+              }}
+            >
+              <MenuIcon sx={{ color: "#047857" }} />
+            </IconButton>
+          </Box>
+
+          {/* مودال دسته‌ها در موبایل */}
+          <Dialog
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            fullWidth
+            maxWidth="xs"
+          >
+            <DialogTitle
+              sx={{
+                textAlign: "center",
+                fontWeight: 700,
+                fontSize: 18,
+              }}
+            >
+              دسته‌بندی‌ها
+            </DialogTitle>
+            <DialogContent dividers>
+              <List>
+                {CATEGORIES.map((cat, index) => (
+                  <ListItemButton
+                    key={cat}
+                    selected={index === value}
+                    onClick={() => {
+                      setValue(index);
+                      setMenuOpen(false);
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                    }}
+                  >
+                    <ListItemText
+                      primary={cat}
+                      sx={{ textAlign: "center" }}
+                      primaryTypographyProps={{
+                        fontWeight: index === value ? 700 : 500,
+                      }}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        // نسخه دسکتاپ: تب‌های اسکرول‌دار + فلش‌های سفارشی
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            px: 2,
+          }}
+        >
+          {/* فلش سمت راست: رفتن به سمت «همه» و گزینه‌های اول */}
+          <IconButton
+            onClick={() => scrollTabs("back")}
+            aria-label="اسکرول به سمت راست (همه)"
+            disabled={!canScrollBack}
+            sx={{
+              color: canScrollBack ? "#047857" : "#d1d5db",
+              "&:hover": {
+                bgcolor: canScrollBack ? "rgba(4,120,87,0.08)" : "transparent",
+              },
+            }}
+          >
+            {/* اینجا برعکس شد: سمت راست فلش به چپ نگاه کند */}
+            <ChevronLeftIcon />
+          </IconButton>
+
+          {/* ظرف اسکرول افقی؛ تب‌ها تا جایی که جا می‌شوند وسط قرار می‌گیرند */}
+          <Box
+            ref={scrollContainerRef}
+            sx={{
+              flex: 1,
+              mx: 1,
+              overflowX: "auto",
+              overflowY: "hidden",
+              display: "flex",
+              justifyContent: "center",
+              "&::-webkit-scrollbar": {
+                display: "none",
+              },
+              scrollbarWidth: "none",
+            }}
+          >
+            <Tabs
+              dir="rtl"
+              value={value}
+              onChange={handleChange}
+              variant="scrollable"
+              scrollButtons={false}
+              allowScrollButtonsMobile={false}
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{
+                minWidth: "max-content",
+                "& .MuiTab-root": {
+                  fontWeight: 700,
+                  fontSize: { xs: 14, md: 16 },
+                },
+              }}
+            >
+              {CATEGORIES.map((cat, index) => (
+                <Tab
+                  key={cat}
+                  label={cat}
+                  ref={(el) => {
+                    tabRefs.current[index] = el;
+                  }}
+                />
+              ))}
+            </Tabs>
+          </Box>
+
+          {/* فلش سمت چپ: رفتن به سمت گزینه‌های بعدی */}
+          <IconButton
+            onClick={() => scrollTabs("forward")}
+            aria-label="اسکرول به سمت چپ"
+            disabled={!canScrollForward}
+            sx={{
+              color: canScrollForward ? "#047857" : "#d1d5db",
+              "&:hover": {
+                bgcolor: canScrollForward
+                  ? "rgba(4,120,87,0.08)"
+                  : "transparent",
+              },
+            }}
+          >
+            {/* اینم برعکسِ قبلی: سمت چپ فلش به راست نگاه کند */}
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
       )}
-    </>
+    </Box>
   );
 }
