@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/src/libs/api";
+import MenuHeader from "@/src/components/MenuHeader";
 
 const FILE_BASE =
   process.env.NEXT_PUBLIC_FILE_BASE_URL ||
@@ -15,9 +15,10 @@ type Product = {
   name: string;
   price: number;
   discountPrice?: number | null;
+  description?: string | null;
   stock: number;
   imageFileName?: string | null;
-  slug: string; // برای رفتن به صفحه‌ی جزئیات
+  slug?: string | null;
 };
 
 type ProductsResponse = {
@@ -33,11 +34,10 @@ function formatToman(value: number | null | undefined) {
 }
 
 export default function ProductsPage() {
-  const router = useRouter();
-
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     api
@@ -49,98 +49,130 @@ export default function ProductsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDelete(id: number) {
-    if (!confirm("آیا از حذف این محصول مطمئن هستید؟")) return;
-    try {
-      await api.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (err: any) {
-      alert(err?.response?.data?.title || "خطا در حذف محصول");
-    }
-  }
-
-  function goToDetail(slug: string) {
-    router.push(`/products/${slug}`);
-  }
-
   return (
-    <main className="p-8 space-y-6" dir="rtl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">🛒 محصولات</h1>
-        <Link
-          href="/products/new"
-          className="px-4 py-2 rounded bg-black text-white"
-        >
-          + افزودن محصول
-        </Link>
-      </div>
+    <main className="min-h-screen bg-white px-4 py-10 sm:px-8" dir="rtl">
+      {/* هدر منو */}
+      <MenuHeader />
 
-      {loading ? (
-        <p className="text-gray-500">در حال بارگذاری…</p>
-      ) : error ? (
-        <div className="p-3 rounded bg-red-50 text-red-700">{error}</div>
-      ) : products.length === 0 ? (
-        <p className="text-gray-500">هیچ محصولی ثبت نشده است.</p>
-      ) : (
-        <table className="w-full border text-right">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-2">نام</th>
-              <th className="p-2">قیمت</th>
-              <th className="p-2">تخفیف</th>
-              <th className="p-2">موجودی</th>
-              <th className="p-2">عکس</th>
-              <th className="p-2">عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
+      {/* لیست محصولات */}
+      <section className="mx-auto mt-14 max-w-6xl">
+        {loading ? (
+          <p className="text-center text-2xl text-emerald-800">
+            در حال بارگذاری…
+          </p>
+        ) : error ? (
+          <div className="mx-auto max-w-lg rounded-2xl bg-red-50 p-6 text-2xl text-red-700 text-center">
+            {error}
+          </div>
+        ) : products.length === 0 ? (
+          <p className="text-center text-2xl text-emerald-800">
+            هنوز هیچ محصولی ثبت نشده است.
+          </p>
+        ) : (
+          <div className="grid gap-16 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => {
               const imgSrc =
                 p.imageFileName && FILE_BASE
                   ? `${FILE_BASE}/uploads/products/${p.imageFileName}`
                   : null;
 
+              const effectiveSlug = p.slug || String(p.id);
+
               return (
-                <tr
+                <div
                   key={p.id}
-                  className="border-t cursor-pointer hover:bg-gray-50"
-                  onClick={() => goToDetail(p.slug)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => router.push(`/products/${effectiveSlug}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/products/${effectiveSlug}`);
+                    }
+                  }}
+                  className="group flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 rounded-[32px] bg-transparent"
                 >
-                  <td className="p-2">{p.name}</td>
-                  <td className="p-2">{formatToman(p.price)}</td>
-                  <td className="p-2">
-                    {p.discountPrice ? formatToman(p.discountPrice) : "—"}
-                  </td>
-                  <td className="p-2">{p.stock}</td>
-                  <td className="p-2">
+                  {/* تصویر بزرگ – انیمیشن فقط روی خود تصویر */}
+                  <div className="relative mt-4 flex items-center justify-center">
                     {imgSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={imgSrc}
                         alt={p.name}
-                        className="w-12 h-12 object-cover rounded"
+                        className="
+                          w-[320px] h-[260px]
+                          sm:w-[360px] sm:h-[290px]
+                          lg:w-[400px] lg:h-[320px]
+                          xl:w-[420px] xl:h-[340px]
+                          object-contain
+                          drop-shadow-[0_40px_70px_rgba(0,0,0,0.40)]
+                          transition-transform
+                          duration-500
+                          hover:-translate-y-2
+                          hover:scale-[1.06]
+                          select-none
+                        "
                       />
                     ) : (
-                      "—"
+                      <div className="w-[320px] h-[260px] sm:w-[360px] sm:h-[290px] lg:w-[400px] lg:h-[320px] xl:w-[420px] xl:h-[340px] flex items-center justify-center rounded-[40px] bg-emerald-100/80 text-emerald-500 text-2xl">
+                        بدون تصویر
+                      </div>
                     )}
-                  </td>
-                  <td className="p-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // نذار کلیک روی ردیف اجرا بشه
-                        handleDelete(p.id);
-                      }}
-                      className="px-3 py-1 text-sm rounded bg-red-600 text-white"
-                    >
-                      حذف
-                    </button>
-                  </td>
-                </tr>
+                  </div>
+
+                  {/* متن زیر تصویر */}
+                  <div className="mt-3 space-y-4 px-2">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-900">
+                      {p.name}
+                    </h2>
+
+                    <div className="flex flex-col items-center gap-1 text-2xl sm:text-3xl">
+                      <div className="flex items-baseline gap-3">
+                        {p.discountPrice ? (
+                          <>
+                            <span className="text-emerald-700 font-bold">
+                              {formatToman(p.discountPrice)}
+                            </span>
+                            <span className="text-gray-400 line-through">
+                              {formatToman(p.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">
+                            {formatToman(p.price)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-lg text-emerald-700">
+                        موجودی: {p.stock.toLocaleString("fa-IR")}
+                      </span>
+                    </div>
+
+                    <p className="text-xl leading-relaxed text-emerald-900/90">
+                      {p.description
+                        ? p.description
+                        : "توضیحات این محصول هنوز ثبت نشده است، اما می‌توانید روی جزئیات محصول کلیک کنید تا اطلاعات بیشتری ببینید."}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/products/${effectiveSlug}`);
+                        }}
+                        className="rounded-full bg-emerald-600 px-6 py-2 text-lg sm:text-xl font-semibold text-white shadow-md shadow-emerald-300/60 transition-all hover:bg-emerald-700 hover:shadow-lg"
+                      >
+                        جزئیات محصول
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
-      )}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
