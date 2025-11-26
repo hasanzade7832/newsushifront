@@ -1,309 +1,220 @@
 // src/components/MenuHeader.tsx
 "use client";
 
-import { useRef, useState, useEffect, type SyntheticEvent } from "react";
-import Box from "@mui/material/Box";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import React, { useEffect, useRef, useState } from "react";
 
-const CATEGORIES = [
-  "همه",
-  "سوشی کلاسیک",
-  "سوشی ویژه",
-  "سوشی مرغ و گوشت",
-  "سوشی سبزیجات",
-  "رول‌های خاص",
-  "سالاد",
-  "نوشیدنی",
-  "پیش‌غذا",
-  "غذای گرم",
-  "دسر",
-  "غذاهای ترکیبی",
+type Story = {
+  id: string;
+  label: string;
+  image: string;
+};
+
+const STORIES: Story[] = [
+  {
+    id: "all",
+    label: "همه",
+    image:
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "classic",
+    label: "سوشی کلاسیک",
+    image:
+      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "special",
+    label: "سوشی ویژه",
+    image:
+      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "meat",
+    label: "سوشی مرغ و گوشت",
+    image:
+      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "veggie",
+    label: "سوشی سبزیجات",
+    image:
+      "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "rolls",
+    label: "رول‌های خاص",
+    image:
+      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "combo",
+    label: "ست‌های ترکیبی",
+    image:
+      "https://images.unsplash.com/photo-1546069901-eacef0df6022?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "fried",
+    label: "سوشی سوخاری",
+    image:
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "spicy",
+    label: "سوشی تند",
+    image:
+      "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "maki",
+    label: "رول ماکی",
+    image:
+      "https://images.unsplash.com/photo-1485249245068-d8dc50b77cc7?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "nigiri",
+    label: "نیگیری",
+    image:
+      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
+  },
+  {
+    id: "mix",
+    label: "سوشی میکس",
+    image:
+      "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=400&q=80",
+  },
 ];
 
 export default function MenuHeader() {
-  // تب پیش‌فرض: "همه"
-  const [value, setValue] = useState(0);
+  const [activeId, setActiveId] = useState<string>("all");
+  const [hasOverflow, setHasOverflow] = useState(false);
 
-  // ref برای هر تب (برای scrollIntoView)
-  const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // ref ظرف اسکرول افقی
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
-  // تشخیص موبایل
-  const isMobile = useMediaQuery("(max-width:768px)");
-
-  // وضعیت مودال موبایل
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // جهت واقعی scrollLeft (برای سازگاری با RTL/LTR)
-  const [scrollSign, setScrollSign] = useState(1);
-  const [canScrollBack, setCanScrollBack] = useState(false);
-  const [canScrollForward, setCanScrollForward] = useState(false);
-
-  // تشخیص اینکه scrollLeft مثبت به کدام سمت می‌رود
+  // تشخیص وجود اسکرول افقی
   useEffect(() => {
-    const el = scrollContainerRef.current;
+    const el = scrollRef.current;
     if (!el) return;
 
-    const start = el.scrollLeft;
-    el.scrollLeft += 1;
-    const end = el.scrollLeft;
-    const delta = end - start;
-    const sign = delta === 0 ? 1 : delta > 0 ? 1 : -1;
-    el.scrollLeft = start;
-    setScrollSign(sign);
+    const checkOverflow = () => {
+      const scrollWidth = el.scrollWidth;
+      const clientWidth = el.clientWidth;
+      setHasOverflow(scrollWidth > clientWidth + 1);
+    };
+
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
+    return () => {
+      window.removeEventListener("resize", checkOverflow);
+    };
   }, []);
 
-  // به‌روزرسانی فعال بودن فلش‌ها
-  useEffect(() => {
-    const el = scrollContainerRef.current;
+  const SCROLL_STEP = 280;
+
+  const handleArrow = (dir: "left" | "right") => {
+    const el = scrollRef.current;
     if (!el) return;
 
-    const updateButtons = () => {
-      const node = scrollContainerRef.current;
-      if (!node) return;
+    // RTL:
+    // فلش کنار «همه» (راست) → آیتم‌ها را به سمت چپ می‌برد (آیتم‌های بعدی)
+    // فلش سمت چپ → برمی‌گرداند به سمت «همه»
+    const delta = dir === "right" ? SCROLL_STEP : -SCROLL_STEP;
 
-      const maxScroll = node.scrollWidth - node.clientWidth;
-      if (maxScroll <= 0) {
-        setCanScrollBack(false);
-        setCanScrollForward(false);
-        return;
-      }
-
-      const raw = node.scrollLeft;
-      const pos = scrollSign >= 0 ? raw : -raw;
-
-      setCanScrollBack(pos > 1);
-      setCanScrollForward(pos < maxScroll - 1);
-    };
-
-    updateButtons();
-
-    el.addEventListener("scroll", updateButtons);
-    window.addEventListener("resize", updateButtons);
-
-    return () => {
-      el.removeEventListener("scroll", updateButtons);
-      window.removeEventListener("resize", updateButtons);
-    };
-  }, [scrollSign]);
-
-  // اسکرول با فلش‌ها
-  const scrollTabs = (direction: "back" | "forward") => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    // back = رفتن به سمت شروع لیست (سمت «همه» در RTL)
-    const amount = 150 * scrollSign * (direction === "forward" ? 1 : -1);
-    el.scrollBy({ left: amount, behavior: "smooth" });
-  };
-
-  // تغییر تب + اسکرول نرم روی تب انتخاب‌شده
-  const handleChange = (_: SyntheticEvent, newValue: number) => {
-    setValue(newValue);
-
-    const el = tabRefs.current[newValue];
-    if (el?.scrollIntoView) {
-      el.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
+    el.scrollBy({ left: delta, behavior: "smooth" });
   };
 
   return (
-    <Box
-      sx={{
-        bgcolor: "white",
-        borderBottom: 1,
-        borderColor: "divider",
-      }}
-    >
-      {/* نسخه موبایل: منوی همبرگری */}
-      {isMobile ? (
-        <>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              px: 2,
-              py: 1.5,
-            }}
+    <div className="w-full pt-2 pb-3">
+      {/* اسلایدر وسط‌چین با عرض زیاد */}
+      <div className="relative px-4 sm:px-6 md:px-8 max-w-[110rem] mx-auto">
+        {/* فلش کنار «همه» */}
+        {hasOverflow && (
+          <button
+            type="button"
+            onClick={() => handleArrow("right")}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20
+                       h-10 w-10 rounded-full bg-white border border-slate-200 shadow
+                       flex items-center justify-center hover:bg-slate-100"
+            aria-label="اسکرول به راست"
           >
-            {/* لوگو سمت راست */}
-            <Box
-              sx={{
-                fontWeight: 800,
-                fontSize: 20,
-                color: "#065f46",
-              }}
-            >
-              LoGo
-            </Box>
+            ❮
+          </button>
+        )}
 
-            {/* دکمه همبرگری */}
-            <IconButton
-              onClick={() => setMenuOpen(true)}
-              aria-label="باز کردن منو"
-              sx={{
-                borderRadius: "999px",
-                border: "1px solid rgba(16,185,129,0.3)",
-                bgcolor: "rgba(16,185,129,0.05)",
-              }}
-            >
-              <MenuIcon sx={{ color: "#047857" }} />
-            </IconButton>
-          </Box>
-
-          {/* مودال دسته‌ها در موبایل */}
-          <Dialog
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            fullWidth
-            maxWidth="xs"
-          >
-            <DialogTitle
-              sx={{
-                textAlign: "center",
-                fontWeight: 700,
-                fontSize: 18,
-              }}
-            >
-              دسته‌بندی‌ها
-            </DialogTitle>
-            <DialogContent dividers>
-              <List>
-                {CATEGORIES.map((cat, index) => (
-                  <ListItemButton
-                    key={cat}
-                    selected={index === value}
-                    onClick={() => {
-                      setValue(index);
-                      setMenuOpen(false);
-                    }}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                    }}
-                  >
-                    <ListItemText
-                      primary={cat}
-                      sx={{ textAlign: "center" }}
-                      primaryTypographyProps={{
-                        fontWeight: index === value ? 700 : 500,
-                      }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            </DialogContent>
-          </Dialog>
-        </>
-      ) : (
-        // نسخه دسکتاپ: تب‌های اسکرول‌دار + فلش‌های سفارشی
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            px: 2,
-          }}
+        {/* لیست استوری‌ها */}
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto no-scrollbar"
+          dir="rtl"
         >
-          {/* فلش سمت راست: رفتن به سمت «همه» و گزینه‌های اول */}
-          <IconButton
-            onClick={() => scrollTabs("back")}
-            aria-label="اسکرول به سمت راست (همه)"
-            disabled={!canScrollBack}
-            sx={{
-              color: canScrollBack ? "#047857" : "#d1d5db",
-              "&:hover": {
-                bgcolor: canScrollBack ? "rgba(4,120,87,0.08)" : "transparent",
-              },
-            }}
+          <ul
+            className="
+              flex flex-row flex-nowrap
+              gap-4 sm:gap-5 md:gap-6
+              px-3
+              justify-start
+              lg:justify-center
+            "
           >
-            {/* اینجا برعکس شد: سمت راست فلش به چپ نگاه کند */}
-            <ChevronLeftIcon />
-          </IconButton>
+            {STORIES.map((story) => {
+              const isActive = activeId === story.id;
 
-          {/* ظرف اسکرول افقی؛ تب‌ها تا جایی که جا می‌شوند وسط قرار می‌گیرند */}
-          <Box
-            ref={scrollContainerRef}
-            sx={{
-              flex: 1,
-              mx: 1,
-              overflowX: "auto",
-              overflowY: "hidden",
-              display: "flex",
-              justifyContent: "center",
-              "&::-webkit-scrollbar": {
-                display: "none",
-              },
-              scrollbarWidth: "none",
-            }}
-          >
-            <Tabs
-              dir="rtl"
-              value={value}
-              onChange={handleChange}
-              variant="scrollable"
-              scrollButtons={false}
-              allowScrollButtonsMobile={false}
-              textColor="primary"
-              indicatorColor="primary"
-              sx={{
-                minWidth: "max-content",
-                "& .MuiTab-root": {
-                  fontWeight: 700,
-                  fontSize: { xs: 14, md: 16 },
-                },
-              }}
-            >
-              {CATEGORIES.map((cat, index) => (
-                <Tab
-                  key={cat}
-                  label={cat}
-                  ref={(el) => {
-                    tabRefs.current[index] = el;
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
+              return (
+                <li key={story.id} className="flex flex-col items-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveId(story.id)}
+                    className="group flex flex-col items-center gap-2 focus:outline-none cursor-pointer"
+                  >
+                    <div
+                      className={[
+                        "w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] bg-gradient-to-tr",
+                        "transition-all duration-200",
+                        "group-hover:-translate-y-1 group-hover:scale-105",
+                        isActive
+                          ? "from-pink-500 via-purple-500 to-yellow-400"
+                          : "from-slate-300 via-slate-200 to-slate-300",
+                      ].join(" ")}
+                    >
+                      <div className="w-full h-full rounded-full bg-white p-[3px]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={story.image}
+                          alt={story.label}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                    </div>
 
-          {/* فلش سمت چپ: رفتن به سمت گزینه‌های بعدی */}
-          <IconButton
-            onClick={() => scrollTabs("forward")}
-            aria-label="اسکرول به سمت چپ"
-            disabled={!canScrollForward}
-            sx={{
-              color: canScrollForward ? "#047857" : "#d1d5db",
-              "&:hover": {
-                bgcolor: canScrollForward
-                  ? "rgba(4,120,87,0.08)"
-                  : "transparent",
-              },
-            }}
+                    <span
+                      className={[
+                        "mt-1 text-xs sm:text-sm md:text-base font-medium text-center",
+                        "max-w-[6.5rem] sm:max-w-[7.5rem] overflow-hidden text-ellipsis whitespace-nowrap",
+                        isActive ? "text-slate-900" : "text-slate-600",
+                      ].join(" ")}
+                    >
+                      {story.label}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* فلش سمت چپ */}
+        {hasOverflow && (
+          <button
+            type="button"
+            onClick={() => handleArrow("left")}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20
+                       h-10 w-10 rounded-full bg-white border border-slate-200 shadow
+                       flex items-center justify-center hover:bg-slate-100"
+            aria-label="اسکرول به چپ"
           >
-            {/* اینم برعکسِ قبلی: سمت چپ فلش به راست نگاه کند */}
-            <ChevronRightIcon />
-          </IconButton>
-        </Box>
-      )}
-    </Box>
+            ❯
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

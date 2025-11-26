@@ -51,14 +51,77 @@ export default function ProductsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-emerald-50 to-emerald-100 px-4 py-10 sm:px-8">
-      {/* هدر منو */}
-      <MenuHeader />
+    <main className="relative min-h-screen bg-white">
+      {/* هدر بالا: لوگو + سرچ + خط‌ها + منو */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl">
+        {/* ردیف لوگو + سرچ؛ الان هم‌عرض اسلایدر */}
+        <div className="mx-auto max-w-[90rem] px-6 pt-4 pb-2" dir="rtl">
+          <div className="flex items-center gap-6">
+            {/* لوگو */}
+            <div className="shrink-0 font-extrabold text-2xl text-slate-800">
+              LoGo
+            </div>
 
-      {/* لیست محصولات */}
-      <section className="mx-auto mt-14 max-w-6xl" dir="rtl">
+            {/* سرچ شیشه‌ای کنار لوگو */}
+            <div className="flex-1">
+              <div
+                className="
+                  relative
+                  rounded-full
+                  bg-slate-100/70
+                  border border-slate-200/70
+                  shadow-sm shadow-slate-200/80
+                  backdrop-blur-md
+                "
+              >
+                <input
+                  type="text"
+                  placeholder="جستجوی محصول..."
+                  className="
+                    w-full rounded-full
+                    bg-transparent
+                    outline-none
+                    px-4 pr-4 pl-11
+                    py-2.5
+                    text-sm sm:text-base
+                    text-slate-800
+                    placeholder:text-slate-400
+                    text-right
+                  "
+                />
+                <span
+                  className="
+                    pointer-events-none
+                    absolute left-4 top-1/2 -translate-y-1/2
+                    text-slate-400 text-lg
+                  "
+                >
+                  🔍
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* خط زیر لوگو و سرچ – تمام عرض */}
+        <div className="mt-3 h-px w-full bg-slate-200/80" />
+
+        {/* منوها */}
+        <div>
+          <MenuHeader />
+        </div>
+
+        {/* خط زیر منو – تمام عرض */}
+        <div className="h-px w-full bg-slate-200/80" />
+      </header>
+
+      {/* لیست محصولات (مثل قبل) */}
+      <section
+        className="mx-auto mt-14 max-w-6xl px-4 sm:px-6 pb-12"
+        dir="rtl"
+      >
         {loading ? (
-          <p className="text-center text-2xl text-emerald-800">
+          <p className="text-center text-2xl text-slate-800">
             در حال بارگذاری…
           </p>
         ) : error ? (
@@ -66,7 +129,7 @@ export default function ProductsPage() {
             {error}
           </div>
         ) : products.length === 0 ? (
-          <p className="text-center text-2xl text-emerald-800">
+          <p className="text-center text-2xl text-slate-800">
             هنوز هیچ محصولی ثبت نشده است.
           </p>
         ) : (
@@ -91,9 +154,8 @@ export default function ProductsPage() {
                       router.push(`/products/${effectiveSlug}`);
                     }
                   }}
-                  className="flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 bg-transparent"
+                  className="flex flex-col items-center text-center outline-none focus-visible:ring-4 focus-visible:ring-slate-300 bg-transparent"
                 >
-                  {/* تصویر بزرگ */}
                   <div className="relative mt-4 flex items-center justify-center">
                     {imgSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -115,15 +177,38 @@ export default function ProductsPage() {
                         "
                       />
                     ) : (
-                      <div className="w-[320px] h-[260px] sm:w-[360px] sm:h-[290px] lg:w-[400px] lg:h-[320px] xl:w-[420px] xl:h-[340px] flex items-center justify-center rounded-[40px] bg-emerald-100/80 text-emerald-500 text-xl sm:text-2xl">
+                      <div
+                        className="
+                          w-[320px] h-[260px]
+                          sm:w-[360px] sm:h-[290px]
+                          lg:w-[400px] lg:h-[320px]
+                          xl:w-[420px] xl:h-[340px]
+                          flex items-center justify-center
+                          rounded-[40px]
+                          bg-slate-100 text-slate-500 text-xl sm:text-2xl
+                        "
+                      >
                         بدون تصویر
                       </div>
                     )}
                   </div>
 
-                  {/* باکس متن زیر تصویر با بردر و سایه لطیف */}
-                  <div className="mt-5 w-full max-w-md rounded-3xl border border-emerald-100/80 bg-white/80 px-6 py-5 text-center shadow-[0_20px_45px_rgba(16,185,129,0.12)]">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-900">
+                  <div
+                    className="
+                      mt-5 w-full max-w-md
+                      rounded-[32px]
+                      border border-white/70
+                      bg-gradient-to-b
+                        from-slate-100/95
+                        via-slate-100/80
+                        to-slate-200/70
+                      backdrop-blur-2xl
+                      px-7 py-6
+                      text-center
+                      shadow-[0_40px_70px_rgba(0,0,0,0.40)]
+                    "
+                  >
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                       {p.name}
                     </h2>
 
@@ -131,25 +216,22 @@ export default function ProductsPage() {
                       <div className="flex items-baseline gap-3">
                         {p.discountPrice ? (
                           <>
-                            <span className="text-emerald-700 font-bold">
+                            <span className="text-slate-900 font-bold">
                               {formatToman(p.discountPrice)}
                             </span>
-                            <span className="text-gray-400 line-through text-sm sm:text-base">
+                            <span className="text-slate-500 line-through text-sm sm:text-base">
                               {formatToman(p.price)}
                             </span>
                           </>
                         ) : (
-                          <span className="text-emerald-700 font-bold">
+                          <span className="text-slate-900 font-bold">
                             {formatToman(p.price)}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm text-emerald-700">
-                        موجودی: {p.stock.toLocaleString("fa-IR")}
-                      </span>
                     </div>
 
-                    <p className="mt-3 text-xs sm:text-sm leading-relaxed text-emerald-900/90">
+                    <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-800/90">
                       {p.description
                         ? p.description
                         : "توضیحات این محصول هنوز ثبت نشده است، اما می‌توانید روی جزئیات محصول کلیک کنید تا اطلاعات بیشتری ببینید."}
@@ -162,7 +244,18 @@ export default function ProductsPage() {
                           e.stopPropagation();
                           router.push(`/products/${effectiveSlug}`);
                         }}
-                        className="rounded-full bg-emerald-600 px-5 py-2 text-sm sm:text-base font-semibold text-white shadow-md shadow-emerald-300/60 transition-all hover:bg-emerald-700 hover:shadow-lg"
+                        className="
+                          relative overflow-hidden
+                          rounded-full px-5 py-2
+                          text-sm sm:text-base font-semibold text-white
+                          cursor-pointer
+                          bg-gradient-to-l from-slate-700 via-slate-600 to-slate-700
+                          bg-[length:200%_100%] bg-right
+                          shadow-md shadow-slate-400/60
+                          transition-all duration-300 ease-out
+                          hover:bg-left
+                          hover:shadow-lg hover:-translate-y-0.5
+                        "
                       >
                         جزئیات محصول
                       </button>
