@@ -1,92 +1,29 @@
-// src/components/MenuHeader.tsx
+// src/components/MenuHeaderText.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 
-type Story = {
+type Category = {
   id: string;
   label: string;
-  image: string;
+  count: number;
 };
 
-const STORIES: Story[] = [
-  {
-    id: "all",
-    label: "همه",
-    image:
-      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "classic",
-    label: "سوشی کلاسیک",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "special",
-    label: "سوشی ویژه",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "meat",
-    label: "سوشی مرغ و گوشت",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "veggie",
-    label: "سوشی سبزیجات",
-    image:
-      "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "rolls",
-    label: "رول‌های خاص",
-    image:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "combo",
-    label: "ست‌های ترکیبی",
-    image:
-      "https://images.unsplash.com/photo-1546069901-eacef0df6022?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "fried",
-    label: "سوشی سوخاری",
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "spicy",
-    label: "سوشی تند",
-    image:
-      "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "maki",
-    label: "رول ماکی",
-    image:
-      "https://images.unsplash.com/photo-1485249245068-d8dc50b77cc7?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "nigiri",
-    label: "نیگیری",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "mix",
-    label: "سوشی میکس",
-    image:
-      "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&w=400&q=80",
-  },
+const CATEGORIES: Category[] = [
+  { id: "all", label: "ALL", count: 32 },
+  { id: "meaty", label: "MEATY", count: 7 },
+  { id: "vegetarian", label: "VEGETARIAN", count: 5 },
+  { id: "vegan", label: "VEGAN", count: 4 },
+  { id: "seafood", label: "SEAFOOD", count: 6 },
+  { id: "dessert", label: "DESSERT", count: 3 },
+  { id: "sides", label: "SIDES", count: 8 },
+  { id: "popular", label: "MOST POPULAR", count: 10 },
 ];
 
-export default function MenuHeader() {
+export default function MenuHeaderText() {
   const [activeId, setActiveId] = useState<string>("all");
   const [hasOverflow, setHasOverflow] = useState(false);
+  const [hasClicked, setHasClicked] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -114,38 +51,51 @@ export default function MenuHeader() {
     const el = scrollRef.current;
     if (!el) return;
 
-    // RTL:
-    // فلش کنار «همه» (راست) → آیتم‌ها را به سمت چپ می‌برد (آیتم‌های بعدی)
-    // فلش سمت چپ → برمی‌گرداند به سمت «همه»
+    // LTR: راست → جلو، چپ → عقب
     const delta = dir === "right" ? SCROLL_STEP : -SCROLL_STEP;
-
     el.scrollBy({ left: delta, behavior: "smooth" });
+  };
+
+  const handleClick = (id: string) => {
+    setActiveId(id);
+    setHasClicked(true);
   };
 
   return (
     <div className="w-full pt-2 pb-3">
-      {/* اسلایدر وسط‌چین با عرض زیاد */}
       <div className="relative px-4 sm:px-6 md:px-8 max-w-[110rem] mx-auto">
-        {/* فلش کنار «همه» */}
+        {/* فلش سمت چپ (آیکون مشکی) */}
+        {hasOverflow && (
+          <button
+            type="button"
+            onClick={() => handleArrow("left")}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20
+                       h-10 w-10 rounded-full bg-white border border-slate-200 shadow
+                       flex items-center justify-center hover:bg-slate-100
+                       text-slate-900"
+            aria-label="Scroll left"
+          >
+            ❯
+          </button>
+        )}
+
+        {/* فلش سمت راست */}
         {hasOverflow && (
           <button
             type="button"
             onClick={() => handleArrow("right")}
             className="absolute right-1 top-1/2 -translate-y-1/2 z-20
                        h-10 w-10 rounded-full bg-white border border-slate-200 shadow
-                       flex items-center justify-center hover:bg-slate-100"
-            aria-label="اسکرول به راست"
+                       flex items-center justify-center hover:bg-slate-100
+                       text-slate-900"
+            aria-label="Scroll right"
           >
             ❮
           </button>
         )}
 
-        {/* لیست استوری‌ها */}
-        <div
-          ref={scrollRef}
-          className="overflow-x-auto no-scrollbar"
-          dir="rtl"
-        >
+        {/* ردیف دسته‌ها */}
+        <div ref={scrollRef} className="overflow-x-auto no-scrollbar">
           <ul
             className="
               flex flex-row flex-nowrap
@@ -153,67 +103,70 @@ export default function MenuHeader() {
               px-3
               justify-start
               lg:justify-center
+              items-center
+              h-16
             "
           >
-            {STORIES.map((story) => {
-              const isActive = activeId === story.id;
+            {CATEGORIES.map((cat) => {
+              const isActive = activeId === cat.id;
+              const isInitialAll =
+                cat.id === "all" && !hasClicked && activeId === "all";
+
+              // دایره برای ALL از اول هست، برای بقیه بعد از کلیک
+              const showCircle = isActive && (hasClicked || cat.id === "all");
+
+              const circleClassName = [
+                "inline-flex items-center justify-center",
+                "h-8 rounded-full bg-yellow-400 text-emerald-900",
+                "text-sm font-extrabold overflow-hidden origin-center",
+                showCircle
+                  ? "w-8 opacity-100 scale-100"
+                  : "w-0 opacity-0 scale-50",
+                isInitialAll ? "" : "transition-all duration-200.ease-out",
+              ].join(" ");
 
               return (
-                <li key={story.id} className="flex flex-col items-center">
+                <li key={cat.id} className="flex flex-col items-center">
                   <button
                     type="button"
-                    onClick={() => setActiveId(story.id)}
-                    className="group flex flex-col items-center gap-2 focus:outline-none cursor-pointer"
+                    onClick={() => handleClick(cat.id)}
+                    className="flex flex-col items-center gap-1 focus:outline-none cursor-pointer"
                   >
-                    <div
-                      className={[
-                        "w-20 h-20 sm:w-24 sm:h-24 rounded-full p-[3px] bg-gradient-to-tr",
-                        "transition-all duration-200",
-                        "group-hover:-translate-y-1 group-hover:scale-105",
-                        isActive
-                          ? "from-pink-500 via-purple-500 to-yellow-400"
-                          : "from-slate-300 via-slate-200 to-slate-300",
-                      ].join(" ")}
-                    >
-                      <div className="w-full h-full rounded-full bg-white p-[3px]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={story.image}
-                          alt={story.label}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      </div>
+                    {/* متن + دایره زرد */}
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={[
+                          "uppercase tracking-[0.18em]",
+                          "text-base sm:text-lg md:text-xl font-extrabold",
+                          "whitespace-nowrap",
+                          isActive ? "text-sky-500" : "text-emerald-800",
+                        ].join(" ")}
+                      >
+                        {cat.label}
+                      </span>
+
+                      <span className={circleClassName}>{cat.count}</span>
                     </div>
 
-                    <span
-                      className={[
-                        "mt-1 text-xs sm:text-sm md:text-base font-medium text-center",
-                        "max-w-[6.5rem] sm:max-w-[7.5rem] overflow-hidden text-ellipsis whitespace-nowrap",
-                        isActive ? "text-slate-900" : "text-slate-600",
-                      ].join(" ")}
-                    >
-                      {story.label}
-                    </span>
+                    {/* نقطه‌های زیر آیتم فعال */}
+                    <div className="mt-1 h-3 flex items-center justify-center">
+                      {isActive && (
+                        <div className="flex gap-1">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <span
+                              key={i}
+                              className="h-1.5 w-1.5 rounded-full bg-sky-400"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </button>
                 </li>
               );
             })}
           </ul>
         </div>
-
-        {/* فلش سمت چپ */}
-        {hasOverflow && (
-          <button
-            type="button"
-            onClick={() => handleArrow("left")}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20
-                       h-10 w-10 rounded-full bg-white border border-slate-200 shadow
-                       flex items-center justify-center hover:bg-slate-100"
-            aria-label="اسکرول به چپ"
-          >
-            ❯
-          </button>
-        )}
       </div>
     </div>
   );
