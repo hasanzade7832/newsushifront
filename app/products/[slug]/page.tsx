@@ -1,20 +1,9 @@
+// app/products/[slug]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import api from "@/src/libs/api";
-
-type Product = {
-  id: number;
-  name: string;
-  description?: string | null;
-  price: number;
-  discountPrice?: number | null;
-  sku: string;
-  stock: number;
-  slug: string;
-  isActive: boolean;
-};
+import { getProductBySlug, Product } from "@/src/libs/api";
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -30,12 +19,15 @@ export default function ProductDetailPage() {
     setLoading(true);
     setError(null);
 
-    api
-      .get<Product>(`/products/by-slug/${slug}`)
-      .then((res) => setProduct(res.data))
-      .catch((err) => {
+    getProductBySlug(slug as string)
+      .then((p) => setProduct(p))
+      .catch((err: any) => {
         console.error(err);
-        setError(err?.response?.data?.title || "Product not found");
+        setError(
+          err?.response?.data?.title ||
+            err?.response?.data?.message ||
+            "Product not found"
+        );
       })
       .finally(() => setLoading(false));
   }, [slug]);
@@ -61,20 +53,43 @@ export default function ProductDetailPage() {
 
   const p = product;
 
+  const imageUrl = p.imageFileName
+    ? `${process.env.NEXT_PUBLIC_API_URL?.replace(
+        "/api",
+        ""
+      )}/uploads/products/${p.imageFileName}`
+    : null;
+
   return (
-    <main className="p-8 space-y-4">
-      <h1 className="text-3xl font-bold">{p.name}</h1>
-      <p className="text-gray-600">{p.description || "—"}</p>
+    <main className="min-h-screen bg-slate-950 text-slate-50 p-8 flex flex-col md:flex-row gap-8">
+      {imageUrl && (
+        <div className="w-full md:w-1/3 flex items-start justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt={p.name}
+            className="rounded-3xl border border-slate-800 max-h-[380px] object-cover"
+          />
+        </div>
+      )}
 
-      <div className="text-lg">
-        Price: {p.price.toLocaleString()}{" "}
-        {p.discountPrice ? (
-          <span>(discount: {p.discountPrice.toLocaleString()})</span>
-        ) : null}
-      </div>
+      <div className="flex-1 space-y-4">
+        <h1 className="text-3xl font-bold">{p.name}</h1>
+        <p className="text-gray-300">{p.description || "—"}</p>
 
-      <div>
-        SKU: {p.sku} | Stock: {p.stock} | {p.isActive ? "✅ Active" : "—"}
+        <div className="text-lg">
+          قیمت: {p.price.toLocaleString("fa-IR")} تومان{" "}
+          {p.discountPrice ? (
+            <span className="text-emerald-300">
+              (با تخفیف: {p.discountPrice.toLocaleString("fa-IR")} تومان)
+            </span>
+          ) : null}
+        </div>
+
+        <div className="text-sm text-gray-400">
+          کد: {p.sku} | موجودی: {p.stock} |{" "}
+          {p.isActive ? "✅ فعال" : "⛔️ غیرفعال"}
+        </div>
       </div>
     </main>
   );

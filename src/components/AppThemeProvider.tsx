@@ -8,6 +8,6 @@ export default function AppThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  // فعلاً هیچ تمی اعمال نمی‌کنیم
+  // فعلاً تم خاصی نداریم، فقط رَپر
   return <>{children}</>;
 }
